@@ -37,7 +37,8 @@ betas = cp.Variable(numberOfBuyers)
 obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
 
 # Constraints
-constraints = [prices[i] >= cp.multiply(valuations[i,], betas[i]) for i in range(numberOfBuyers)] + [betas <= 1]
+constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1]
+
 
 # Convex Program for primal
 primal = cp.Problem(obj, constraints)
@@ -110,7 +111,7 @@ betas = cp.Variable(numberOfBuyers)
 obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
 
 # Constraints
-constraints = [prices[i] >= cp.multiply(valuations[i,], betas[i]) for i in range(numberOfBuyers)]
+constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)]
 
 # Convex Program for primal
 dual = cp.Problem(obj, constraints)

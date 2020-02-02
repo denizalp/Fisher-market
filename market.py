@@ -59,13 +59,18 @@ class Market(object):
             exit(0)
 
     def solveQuasiLinear():
+        """
+        Solves Fisher Market with Quasi-Linear utilities
 
-        ##################### Quasi-Linear Fisher Market #####################
-
-        ########### Primal: Output => Prices ###########
-
+        Returns:
+        A tuple (X, p) that corresponds to the optimal matrix of allocations and
+        prices.
+        """
         numberOfGoods = self.numberOfGoods()
         numberOfBuyers = self.numberOfBuyers()
+
+
+        ########### Primal: Output => Prices ###########
 
         # Variables of program
         prices = cp.Variable(numberOfGoods)
@@ -75,18 +80,17 @@ class Market(object):
         obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
 
         # Constraints
-        constraints = [prices[i] >= cp.multiply(valuations[i,], betas[i]) \
-                        for i in range(numberOfBuyers)] + [betas <= 1]
+        constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1]
+
 
         # Convex Program for primal
         primal = cp.Problem(obj, constraints)
 
         # Solve Program
         primal.solve()  # Returns the optimal value.
-        print("Status:", primal.status)
-        #print("Optimal Value", primal.value)
-        #print("Optimal Prices", prices.value, betas.value)
-
+        print("Primal Status (Price): ", primal.status)
+        print("Optimal Value Primal (Price): ", primal.value)
+        p = prices.value
 
         ########### Dual: Output => Allocation #########
 
@@ -109,6 +113,65 @@ class Market(object):
 
         # Solve Program
         dual.solve()  # Returns the optimal value.
-        print("Status:", dual.status)
-        print("Optimal Value", dual.value)
-        print("Optimal Allocation", alloc.value)
+        print("Dual Status (Allocation):", dual.status)
+        print("Optimal Value Dual (Allocation)", dual.value)
+        X = alloc.value
+
+        return (X, p)
+
+    def solveLinear():
+        """
+        Solves Fisher Market with Linear utilities
+
+        Returns:
+        A tuple (X, p) that corresponds to the optimal matrix of allocations and
+        prices.
+        """
+
+        numberOfGoods = self.numberOfGoods()
+        numberOfBuyers = self.numberOfBuyers()
+
+        ########### Primal: Output => Allocation #########
+
+        # Variables of program
+        alloc = cp.Variable((numberOfBuyers, numberOfGoods))
+        utils = cp.Variable(numberOfBuyers)
+
+        # Objective
+        obj = cp.Maximize(budgets.T @ cp.log(utils))
+
+        constraints = [utils <= cp.sum(cp.multiply(valuations, alloc), axis = 1),
+                        cp.sum(alloc, axis = 0) <= 1,
+                        alloc >= 0]
+
+        # Convex Program for primal
+        primal = cp.Problem(obj, constraints)
+
+
+        # Solve Program
+        primal.solve()  # Returns the optimal value.
+        print("Primal Status (Allocation):", primal.status)
+        print("Optimal Value Primal (Allocation)", primal.value)
+        X = alloc.value
+
+
+        ########### Primal: Output => Prices ###########
+
+        # Variables of program
+        prices = cp.Variable(numberOfGoods)
+        betas = cp.Variable(numberOfBuyers)
+
+        # Objective
+        obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
+
+        # Constraints
+        constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)]
+
+        # Convex Program for primal
+        dual = cp.Problem(obj, constraints)
+
+        # Solve Program
+        dual.solve()  # Returns the optimal value.
+        print("Dual Status (Price): ", dual.status)
+        print("Optimal Value Dual (Price): ", dual.value)
+        print("Optimal Prices", prices.value)
