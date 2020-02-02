@@ -19,8 +19,9 @@ budgets = np.array([20, 23, 54, 12])
 # Vector with quantity of goods: |goods|
 numGoodsVec = np.array([1,2,6,4,3])
 
-market1 = m.Market(valuations, budgets, numberOfGoods)
+market1 = m.Market(valuations, budgets, numGoodsVec)
 
+market1.getValuations()
 market1.numberOfBuyers()
 market1.numberOfGoods()
 market1.solveMarket("quasi-linear")

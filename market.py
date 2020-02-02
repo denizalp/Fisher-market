@@ -13,7 +13,7 @@ class Market:
 
     """
 
-    def __init__(self, V, B, G, M = None):
+    def __init__(self, V, B, M):
         """
         The constructor for the market class.
 
@@ -21,12 +21,21 @@ class Market:
         V (numpy: double x double): matrix of valuations of buyer i for good j.
         B (numpy: double): vector of buyer budgets.
         G (int): number of goods in the market.
-        TODO: M (numpy: double): vector of number of each good.
+        M (numpy: double): vector of number of each good.
         """
-        self.valuations = V
         self.budgets = B
-        self.numGoodsVec = np.array([1 for _ in range(G)])
+        self.numGoodsVec = M
 
+        # Add each copy of a good as a new good with the same valuation to the
+        # valuations matrix
+        self.valuations = np.empty((0,self.numberOfBuyers()))
+        for item, itemNumber in enumerate(self.numGoodsVec):
+            self.valuations = np.append(self.valuations, np.tile(V[:,item], (itemNumber, 1)), axis =0)
+        self.valuations = self.valuations.T
+
+
+    def getValuations(self):
+        return self.valuations
 
     def numberOfGoods(self):
         """
@@ -53,12 +62,31 @@ class Market:
         prices.
         """
         if (utilities == "quasi-linear"):
-            return self.solveQuasiLinear()
+            alloc, prices = self.solveQuasiLinear()
         elif (utilities == "linear"):
-            return self.solveLinear()
+            alloc, prices = self.solveLinear()
         else:
             print("Invalid Utility Model")
             exit(0)
+
+        # print( f"prices before = {prices}\n")
+        itemCounter = 0
+        itemNumber = 0
+        X = np.zeros((self.numberOfBuyers(), self.numberOfGoods()))
+        p = []
+        for item in range(self.valuations.shape[1]):
+            # print(f"itemNumber = {itemNumber}, itemCounter = {itemCounter}, numGood = {self.numGoodsVec[itemNumber]}")
+            X[:, itemNumber] += alloc[:,item]
+            itemCounter += 1
+
+            if (itemCounter == self.numGoodsVec[itemNumber]):
+                p.append(prices[item])
+                itemNumber += 1
+                itemCounter = 0
+
+        p = np.array(p)
+        # print( f"prices after = {p}\n")
+        return (X,p)
 
     def solveQuasiLinear(self):
         """
@@ -68,7 +96,7 @@ class Market:
         A tuple (X, p) that corresponds to the optimal matrix of allocations and
         prices.
         """
-        numberOfGoods = self.numberOfGoods()
+        numberOfGoods = np.sum(self.numGoodsVec)
         numberOfBuyers = self.numberOfBuyers()
 
 
@@ -130,7 +158,7 @@ class Market:
         prices.
         """
 
-        numberOfGoods = self.numberOfGoods()
+        numberOfGoods = np.sum(self.numGoodsVec)
         numberOfBuyers = self.numberOfBuyers()
 
         ########### Primal: Output => Allocation #########
