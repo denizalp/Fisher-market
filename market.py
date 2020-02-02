@@ -1,7 +1,7 @@
-import numpy as np
 import cvxpy as cp
+import numpy as np
 
-class Market(object):
+class Market:
     """
     This is a class that models a Market
 
@@ -13,34 +13,36 @@ class Market(object):
 
     """
 
-    def __init__(self, V, B, M):
+    def __init__(self, V, B, G, M = None):
         """
         The constructor for the market class.
 
         Parameters:
         V (numpy: double x double): matrix of valuations of buyer i for good j.
         B (numpy: double): vector of buyer budgets.
-        M (numpy: double): vector of number of each good.
+        G (int): number of goods in the market.
+        TODO: M (numpy: double): vector of number of each good.
         """
         self.valuations = V
         self.budgets = B
-        self.numGoodsVec = M
+        self.numGoodsVec = np.array([1 for _ in range(G)])
 
-    def numberOfGoods():
+
+    def numberOfGoods(self):
         """
         Returns:
         Number of goods in the market
         """
-        return self.numGoodsVec.size()
+        return self.numGoodsVec.size
 
-    def numberOfBuyers():
+    def numberOfBuyers(self):
         """
         Returns:
         Number of buyers in the market
         """
-        return self.budgets.size()
+        return self.budgets.size
 
-    def solveMarket(utilities = "quasi-linear"):
+    def solveMarket(self, utilities = "quasi-linear"):
         """
         Parameters:
         utilities(string): Denotes the utilities used to solve market
@@ -50,15 +52,15 @@ class Market(object):
         A tuple (X, p) that corresponds to the optimal matrix of allocations and
         prices.
         """
-        if utilities = "quasi-linear":
+        if (utilities == "quasi-linear"):
             return self.solveQuasiLinear()
-        elif utilities = "linear":
+        elif (utilities == "linear"):
             return self.solveLinear()
         else:
             print("Invalid Utility Model")
             exit(0)
 
-    def solveQuasiLinear():
+    def solveQuasiLinear(self):
         """
         Solves Fisher Market with Quasi-Linear utilities
 
@@ -77,10 +79,10 @@ class Market(object):
         betas = cp.Variable(numberOfBuyers)
 
         # Objective
-        obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
+        obj = cp.Minimize(cp.sum(prices) - self.budgets.T @ cp.log(betas))
 
         # Constraints
-        constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1]
+        constraints = [prices[j] >= cp.multiply(self.valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1]
 
 
         # Convex Program for primal
@@ -100,9 +102,9 @@ class Market(object):
         utils = cp.Variable(numberOfBuyers)
 
         # Objective
-        obj = cp.Maximize(cp.sum(cp.multiply(budgets, cp.log(utils)) - values))
+        obj = cp.Maximize(cp.sum(cp.multiply(self.budgets, cp.log(utils)) - values))
 
-        constraints = [utils <= cp.sum(cp.multiply(valuations, alloc), axis = 1) + values,
+        constraints = [utils <= cp.sum(cp.multiply(self.valuations, alloc), axis = 1) + values,
                         cp.sum(alloc, axis = 0) <= 1,
                         alloc >= 0,
                         values >= 0]
@@ -119,7 +121,7 @@ class Market(object):
 
         return (X, p)
 
-    def solveLinear():
+    def solveLinear(self):
         """
         Solves Fisher Market with Linear utilities
 
@@ -138,9 +140,9 @@ class Market(object):
         utils = cp.Variable(numberOfBuyers)
 
         # Objective
-        obj = cp.Maximize(budgets.T @ cp.log(utils))
+        obj = cp.Maximize(self.budgets.T @ cp.log(utils))
 
-        constraints = [utils <= cp.sum(cp.multiply(valuations, alloc), axis = 1),
+        constraints = [utils <= cp.sum(cp.multiply(self.valuations, alloc), axis = 1),
                         cp.sum(alloc, axis = 0) <= 1,
                         alloc >= 0]
 
@@ -162,10 +164,10 @@ class Market(object):
         betas = cp.Variable(numberOfBuyers)
 
         # Objective
-        obj = cp.Minimize(cp.sum(prices) - budgets.T @ cp.log(betas))
+        obj = cp.Minimize(cp.sum(prices) - self.budgets.T @ cp.log(betas))
 
         # Constraints
-        constraints = [prices[j] >= cp.multiply(valuations[:,j], betas) for j in range(numberOfGoods)]
+        constraints = [prices[j] >= cp.multiply(self.valuations[:,j], betas) for j in range(numberOfGoods)]
 
         # Convex Program for primal
         dual = cp.Problem(obj, constraints)
@@ -174,4 +176,6 @@ class Market(object):
         dual.solve()  # Returns the optimal value.
         print("Dual Status (Price): ", dual.status)
         print("Optimal Value Dual (Price): ", dual.value)
-        print("Optimal Prices", prices.value)
+        p = prices.value
+
+        return (X, p)
