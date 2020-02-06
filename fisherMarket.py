@@ -29,7 +29,6 @@ class FisherMarket:
             self.numGoodsVec = np.ones(self.valuations.shape[1])
         else:
             self.numGoodsVec = M
-            print(M)
             # Add each copy of a good as a new good with the same valuation to the
             # valuations matrix
             self.valuations = np.empty((0,self.numberOfBuyers()))
@@ -65,6 +64,14 @@ class FisherMarket:
         """
         return self.budgets.size
 
+    def getCache(self):
+        """
+        Returns:
+        The cached alocation values (X, p)
+
+        """
+        return (self.optimalX, self.optimalp)
+
     def getDS(self, utilities = "quasi-linear"):
         """
         Takes as input the utility structure and returns the demand and supply
@@ -77,14 +84,16 @@ class FisherMarket:
         Returns:
         A tuple (D, S) of vector of demand and supply for each good.
         """
+        # Find optimal allocation and cache it
         X,p = self.solveMarket(utilities)
+        self.optimalX = X
+        self.optimalp = p
 
         D = np.sum(X*p, axis = 0)
         assert D.size == self.numberOfGoods()
 
         S = np.multiply(self.numGoodsVec, p)
         assert S.size == self.numberOfGoods()
-
         assert (np.sum(np.abs(D-S)) < 0.0001)
 
         return (D, S)
@@ -134,9 +143,8 @@ class FisherMarket:
         A tuple (X, p) that corresponds to the optimal matrix of allocations and
         prices.
         """
-        numberOfGoods = np.sum(self.numGoodsVec)
+        numberOfGoods = np.sum(self.numGoodsVec).astype(int)
         numberOfBuyers = self.numberOfBuyers()
-
 
         ########### Primal: Output => Prices ###########
 
@@ -156,8 +164,8 @@ class FisherMarket:
 
         # Solve Program
         primal.solve()  # Returns the optimal value.
-        print("Primal Status (Price): ", primal.status)
-        print("Optimal Value Primal (Price): ", primal.value)
+        # print("Primal Status (Price): ", primal.status)
+        # print("Optimal Value Primal (Price): ", primal.value)
         p = prices.value
 
         ########### Dual: Output => Allocation #########
@@ -181,8 +189,8 @@ class FisherMarket:
 
         # Solve Program
         dual.solve()  # Returns the optimal value.
-        print("Dual Status (Allocation):", dual.status)
-        print("Optimal Value Dual (Allocation)", dual.value)
+        # print("Dual Status (Allocation):", dual.status)
+        # print("Optimal Value Dual (Allocation)", dual.value)
         X = alloc.value
 
         return (X, p)
@@ -196,7 +204,7 @@ class FisherMarket:
         prices.
         """
 
-        numberOfGoods = np.sum(self.numGoodsVec)
+        numberOfGoods = np.sum(self.numGoodsVec).astype(int)
         numberOfBuyers = self.numberOfBuyers()
 
         ########### Primal: Output => Allocation #########
@@ -218,8 +226,8 @@ class FisherMarket:
 
         # Solve Program
         primal.solve()  # Returns the optimal value.
-        print("Primal Status (Allocation):", primal.status)
-        print("Optimal Value Primal (Allocation)", primal.value)
+        # print("Primal Status (Allocation):", primal.status)
+        # print("Optimal Value Primal (Allocation)", primal.value)
         X = alloc.value
 
 
@@ -240,8 +248,8 @@ class FisherMarket:
 
         # Solve Program
         dual.solve()  # Returns the optimal value.
-        print("Dual Status (Price): ", dual.status)
-        print("Optimal Value Dual (Price): ", dual.value)
+        # print("Dual Status (Price): ", dual.status)
+        # print("Optimal Value Dual (Price): ", dual.value)
         p = prices.value
 
         return (X, p)

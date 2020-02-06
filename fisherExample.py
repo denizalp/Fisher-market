@@ -14,7 +14,7 @@ budgets = np.array([20, 23, 54, 12])
 numGoodsVec = np.array([1,2,6,4,3])
 
 # Create Market
-market1 = m.FisherMarket(valuations, budgets, numGoodsVec)
+market1 = m.FisherMarket(valuations, budgets)
 
 # Solve for market prices and allocations for desired utility function structure.
 

@@ -16,14 +16,19 @@ class Economy:
         self.demandV = demandV
 
 
-    def solve(self, epsilon):
+    def solve(self, epsilon, utilities = "quasi-linear"):
         iter = 1
         # Create supply side
         supply = m.FisherMarket(self.supplyV, self.supplyB)
         prevBudgets = np.ones(supply.numberOfBuyers()) * np.inf
+        prevDiff = 100000000
+        isNotContraction = -1
 
 
-        while ((np.sum(np.abs(prevBudgets - supply.getBudgets())) > epsilon) or iter > 200):
+        while ((np.sum(np.abs(prevBudgets - supply.getBudgets())) > epsilon) and (iter < 500)):
+            # Increment variable if change this time period is bigger than last one
+            isNotContraction += ((prevDiff - np.sum(np.abs(prevBudgets - supply.getBudgets()))) < 0)
+            prevDiff = np.sum(np.abs(prevBudgets - supply.getBudgets()))
 
             # keep track of iteration and value
             if(iter %10 == 0):
@@ -33,13 +38,23 @@ class Economy:
 
             # Store previous iteration's budgets
             prevBudgets = supply.getBudgets()
-            D, S = supply.getDS("quasi-linear") # solve for demand & supply
+            D, S = supply.getDS(utilities) # solve for demand & supply
+            X, p = supply.getCache() # store the allocation
 
             # Create the new demand side market
             demand = m.FisherMarket(self.demandV, D)
-            D, S = demand.getDS("quasi-linear")  #solve for demand & supply
+            D, S = demand.getDS(utilities)  #solve for demand & supply
 
             # Create the newsupply side of the market
             supply = m.FisherMarket(self.supplyV, D)
 
-        print("Market converges")
+        if(iter < 200):
+            print(f"Market converges with iter {iter}- Epsilon = { np.sum(np.abs(prevBudgets - supply.getBudgets()))}\n")
+
+
+        if(isNotContraction):
+            print(f"It is not a contraction : isNotContraction value  {isNotContraction})")
+        Q, w = demand.getCache()
+        B = supply.getBudgets()
+
+        return (X, p, Q, w, B)
