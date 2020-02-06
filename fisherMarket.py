@@ -104,8 +104,8 @@ class FisherMarket:
         elif (utilities == "linear"):
             alloc, prices = self.solveLinear()
         else:
-            print("Invalid Utility Model")
-            exit(0)
+            print(f"Invalid Utility Model : '{utilities}'")
+            exit()
 
         # print( f"prices before = {prices}\n")
         itemCounter = 0

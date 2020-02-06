@@ -21,3 +21,6 @@ market1 = m.FisherMarket(valuations, budgets, numGoodsVec)
 # Current Options are 'quasi-linear' and 'linear'
 market1.solveMarket("quasi-linear")
 market1.solveMarket("linear")
+
+# Get demand and supply for each good (in dollar)
+market1.getDS("quasi-linear")

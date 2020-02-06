@@ -32,12 +32,12 @@ class Economy:
             iter += 1
 
             # Store previous iteration's budgets
-            prevBudgets = self.supply.getBudgets()
-            D, S = supply.getDS("quasil-linear") # solve for demand & supply
+            prevBudgets = supply.getBudgets()
+            D, S = supply.getDS("quasi-linear") # solve for demand & supply
 
             # Create the new demand side market
             demand = m.FisherMarket(self.demandV, D)
-            D, S = demand.getDS("quasil-linear")  #solve for demand & supply
+            D, S = demand.getDS("quasi-linear")  #solve for demand & supply
 
             # Create the newsupply side of the market
             supply = m.FisherMarket(self.supplyV, D)
