@@ -13,27 +13,37 @@ class FisherMarket:
 
     """
 
-    def __init__(self, V, B, M):
+    def __init__(self, V, B, M = None):
         """
         The constructor for the fisherMarket class.
 
         Parameters:
-        V (numpy: double x double): matrix of valuations of buyer i for good j.
-        B (numpy: double): vector of buyer budgets.
-        G (int): number of goods in the market.
-        M (numpy: double): vector of number of each good.
+        valuations (numpy: double x double): matrix of valuations of buyer i for good j.
+        budgets (numpy: double): vector of buyer budgets.
+        numGoodsVec (numpy: double): vector of number of each good.
         """
         self.budgets = B
-        self.numGoodsVec = M
 
-        # Add each copy of a good as a new good with the same valuation to the
-        # valuations matrix
-        self.valuations = np.empty((0,self.numberOfBuyers()))
-        for item, itemNumber in enumerate(self.numGoodsVec):
-            self.valuations = np.append(self.valuations, np.tile(V[:,item], (itemNumber, 1)), axis =0)
-        self.valuations = self.valuations.T
+        if(M is None):
+            self.valuations = V
+            self.numGoodsVec = np.ones(self.valuations.shape[1])
+        else:
+            self.numGoodsVec = M
+            print(M)
+            # Add each copy of a good as a new good with the same valuation to the
+            # valuations matrix
+            self.valuations = np.empty((0,self.numberOfBuyers()))
+            for item, itemNumber in enumerate(self.numGoodsVec):
+                self.valuations = np.append(self.valuations, np.tile(V[:,item], (itemNumber, 1)), axis =0)
+            self.valuations = self.valuations.T
 
 
+    def getBudgets(self):
+        """
+        Returns:
+        The budgets of the buyers in the market
+        """
+        return self.budgets
     def getValuations(self):
         """
         Returns:
@@ -54,6 +64,30 @@ class FisherMarket:
         Number of buyers in the market
         """
         return self.budgets.size
+
+    def getDS(self, utilities = "quasi-linear"):
+        """
+        Takes as input the utility structure and returns the demand and supply
+        (in dollars) of all goods in the economy.
+
+        Parameters:
+        utilities(string): Denotes the utilities used to solve market
+            Currently options are 'quasi-linear' and 'linear'
+
+        Returns:
+        A tuple (D, S) of vector of demand and supply for each good.
+        """
+        X,p = self.solveMarket(utilities)
+
+        D = np.sum(X*p, axis = 0)
+        assert D.size == self.numberOfGoods()
+
+        S = np.multiply(self.numGoodsVec, p)
+        assert S.size == self.numberOfGoods()
+
+        assert (np.sum(np.abs(D-S)) < 0.0001)
+
+        return (D, S)
 
     def solveMarket(self, utilities = "quasi-linear"):
         """
