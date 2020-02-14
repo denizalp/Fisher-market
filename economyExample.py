@@ -1,6 +1,7 @@
 import numpy as np
 import economy as e
 
+
 # Note, we assume that each firm produces one good, hence |goods|  = |firms|
 # Furthermore since every worker is also a buyer |buyer| = |workers|
 
@@ -19,14 +20,12 @@ supplyB = np.array([20, 23, 54, 12, 36])
 market1 = e.Economy(supplyV, supplyB, demandV)
 
 # Check if the iterative process converges
-market1.solve(0.001, "quasi-linear") # For this one definitely contraction
-market1.solve(0.0001, "quasi-linear") # For this one definitely contraction
+X, p, Q, w, B = market1.solve(0.001, "quasi-linear") # For this one definitely contraction
+X, p, Q, w, B = market1.solve(0.0001, "quasi-linear") # For this one definitely contraction
 
 
 
-market1.solve(0.0001, "linear") # Converges
-
-market1.solve(0.00001, "linear") # Bouncing around and not converging
+X, p, Q, w, B = market1.solve(0.0001, "linear") # Converges
 
 
 
@@ -48,10 +47,12 @@ supplyB = np.array([151, 256])
 market1 = e.Economy(supplyV, supplyB, demandV)
 
 # Check if the iterative process converges
-market1.solve(0.0001, "quasi-linear") # For this one definitely contraction
+market1.solve(0.001, "quasi-linear") # For this one definitely contraction
 
-market1.solve(0.00001, "quasi-linear") # For this one definitely contraction
+market1.solve(0.0005, "quasi-linear") # For this one definitely contraction
 
+
+market1.solve(0.001, "linear") # For this one definitely contraction
 
 market1.solve(0.0001, "linear") # For this one definitely contraction
 
@@ -77,7 +78,31 @@ supplyB = np.array([151, 256])
 market1 = e.Economy(supplyV, supplyB, demandV)
 
 # Check if the iterative process converges
-market1.solve(0.0001, "quasi-linear") # For this one definitely contraction
+market1.solve(0.001, "quasi-linear") # For this one definitely contraction
 
 
 market1.solve(0.0001, "linear") # For this one definitely contraction
+
+
+
+############ Example 3: Not contraction (because goods are not good?) ############
+
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[1, 2, 3], [3, 2, 1], [2, 2, 2]])
+
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[1, 2, 3], [3, 2, 1], [2, 2, 2]])
+
+# Budgets of firms: |buyers|
+supplyB = np.array([5, 5, 5])
+
+
+
+# Create Market
+market1 = e.Economy(supplyV, supplyB, demandV)
+
+# Check if the iterative process converges
+market1.solve(0.001, "quasi-linear") # For this one definitely contraction
+
+
+market1.solve(0.001, "linear") # For this one definitely contraction

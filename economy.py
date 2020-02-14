@@ -41,9 +41,10 @@ class Economy:
             prevBudgets = supply.getBudgets()
             supplyD, supplyS = supply.getDS(utilities) # solve for demand & supply
 
-            if( abs(np.sum(supplyD)- np.sum(self.supplyB)) >= np.sum(supplyD)*0.001):
-                print(f"Sum of Supply: {np.sum(supplyD)}\nSum of Budgets: {np.sum(self.supplyB)}")
-            assert abs(np.sum(supplyD)- np.sum(self.supplyB)) < np.sum(supplyD)*0.001
+            # NOTE Above check is taken out because when budgets are not spend entirely, there are then issues.
+            # if( abs(np.sum(supplyD)- np.sum(self.supplyB)) >= np.sum(supplyD)*0.001):
+            #     print(f"Sum of Supply: {np.sum(supplyD)}\nSum of Budgets: {np.sum(self.supplyB)}")
+            # assert abs(np.sum(supplyD)- np.sum(self.supplyB)) < np.sum(supplyD)*0.001
 
 
             X, w = supply.getCache() # store the allocation
@@ -68,11 +69,13 @@ class Economy:
             print(f"\nMarket converges with iter {iter}- Epsilon = { np.sum(np.abs(prevBudgets - supply.getBudgets()))}\n")
 
             # Check that endowments do not disappear i.e. inputs = outputs
-            if( (abs((np.sum(B) - np.sum(w))) > np.sum(B)*0.001) or \
-                ((np.sum(B) - np.sum(self.supplyB) ) > np.sum(B)*0.001)):
+            if( (abs((np.sum(B) - np.sum(w))) > np.sum(B)*0.001)):
+                #or ((np.sum(B) - np.sum(self.supplyB) ) > np.sum(B)*0.001)):
                 print(f"Budgets of firms: {B}\nWages of workers: {w}\nInitial Firm Budgets: {self.supplyB}")
             assert abs(np.sum(B) - np.sum(w)) < np.sum(B)*0.001
-            assert abs(np.sum(B) - np.sum(self.supplyB)) < np.sum(B)*0.001
+
+            # Note below assert is checked because budgets are sometimes not spent.
+            #assert abs(np.sum(B) - np.sum(self.supplyB)) < np.sum(B)*0.001
 
             # Check equilibrium condition that demand side demand is equal to supply side demand
             if(np.sum(np.abs(demandD - demandS)) > np.sum(demandD)*0.001):
@@ -82,7 +85,7 @@ class Economy:
             print(f"Initial GDP: {np.sum(self.supplyB)}\nGDP (firm budgets): {np.sum(B)}\nGDP (workers' wages): {np.sum(w)}")
 
         if(isNotContraction):
-            print(f"It is not a contraction : isNotContraction value  {isNotContraction})")
+            print(f"It is not a contraction : isNotContraction value  {isNotContraction}")
 
 
 

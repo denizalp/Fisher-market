@@ -2,6 +2,8 @@ import cvxpy as cp
 import numpy as np
 import sys
 
+np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+
 class FisherMarket:
     """
     This is a class that models a Fisher Market
@@ -106,13 +108,12 @@ class FisherMarket:
         if(((np.sum(D) - np.sum(self.getBudgets())) > np.sum(self.getBudgets())*0.001) or ((np.sum(X @ p) - np.sum(self.getBudgets())) > np.sum(self.getBudgets())*0.001)):
             print(f"Model money spent: {np.sum(D)}\nActual Money Present: {np.sum(self.getBudgets())}")
 
-        assert abs( np.sum(D) - np.sum(self.getBudgets()) ) < np.sum(D)*0.001
-        assert abs( np.sum(X @ p) - np.sum(self.getBudgets()) ) < np.sum(X @ p)*0.001
+        assert  np.sum(D) - np.sum(self.getBudgets()) < np.sum(D)*0.001
+        assert np.sum(X @ p) - np.sum(self.getBudgets()) < np.sum(X @ p)*0.001
 
         return (D, S)
 
     def solveMarket(self, utilities = "quasi-linear", printResults = True):
-        np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
         """
         Parameters:
         utilities(string): Denotes the utilities used to solve market
@@ -154,9 +155,9 @@ class FisherMarket:
         assert (np.dot(numberOfEachGood, p) - np.sum(self.budgets)) < np.sum(self.budgets)*0.001
 
         # Check that the money spent by each buyer is less than their budget
-        if(np.sum(np.abs(X @ p - self.budgets)) > np.sum(self.budgets)*0.001):
+        if(np.sum(X @ p - self.budgets) > np.sum(self.budgets)*0.0001):
             print(f"Money spent by buyers: {X @ p}\nBuyers' budgets: {self.budgets}")
-        assert np.sum(np.abs(X @ p - self.budgets)) < np.sum(self.budgets)*0.001
+        assert np.sum(X @ p - self.budgets) < np.sum(self.budgets)*0.0001
 
 
         return (X,p)
@@ -180,7 +181,7 @@ class FisherMarket:
         utils = cp.Variable(numberOfBuyers)
 
         # Objective
-        obj = cp.Maximize(self.budgets.T @ (cp.log(utils) - values))
+        obj = cp.Maximize(self.budgets.T @ cp.log(utils) - cp.sum(values))
 
         constraints = [utils <= (cp.sum(cp.multiply(self.valuations, alloc), axis = 1) + values),
                         cp.sum(alloc, axis = 0) <= 1,
