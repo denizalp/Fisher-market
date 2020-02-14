@@ -1,5 +1,6 @@
 import cvxpy as cp
 import numpy as np
+import sys
 
 class FisherMarket:
     """
@@ -23,18 +24,18 @@ class FisherMarket:
         numGoodsVec (numpy: double): vector of number of each good.
         """
         self.budgets = B
+        self.valuations = V
 
         if(M is None):
-            self.valuations = V
             self.numGoodsVec = np.ones(self.valuations.shape[1])
         else:
             self.numGoodsVec = M
-            # Add each copy of a good as a new good with the same valuation to the
-            # valuations matrix
-            self.valuations = np.empty((0,self.numberOfBuyers()))
-            for item, itemNumber in enumerate(self.numGoodsVec):
-                self.valuations = np.append(self.valuations, np.tile(V[:,item], (itemNumber, 1)), axis =0)
-            self.valuations = self.valuations.T
+            # # Add each copy of a good as a new good with the same valuation to the
+            # # valuations matrix
+            # self.valuations = np.empty((0,self.numberOfBuyers()))
+            # for item, itemNumber in enumerate(self.numGoodsVec):
+            #     self.valuations = np.append(self.valuations, np.tile(V[:,item], (itemNumber, 1)), axis =0)
+            # self.valuations = self.valuations.T
 
 
     def getBudgets(self):
@@ -43,6 +44,7 @@ class FisherMarket:
         The budgets of the buyers in the market
         """
         return self.budgets
+
     def getValuations(self):
         """
         Returns:
@@ -85,7 +87,7 @@ class FisherMarket:
         A tuple (D, S) of vector of demand and supply for each good.
         """
         # Find optimal allocation and cache it
-        X,p = self.solveMarket(utilities)
+        X,p = self.solveMarket(utilities, printResults = False)
         self.optimalX = X
         self.optimalp = p
 
@@ -93,12 +95,24 @@ class FisherMarket:
         assert D.size == self.numberOfGoods()
 
         S = np.multiply(self.numGoodsVec, p)
+        if(S.size != self.numberOfGoods()):
+            print(f"Size of supply: {S.size}\nNumber of Goods: {self.numberOfGoods()}")
         assert S.size == self.numberOfGoods()
-        assert (np.sum(np.abs(D-S)) < 0.0001)
+
+        if((np.sum(np.abs(D-S)) > np.sum(np.abs(D))*0.001)):
+            print(f"Demand: {D}\nSupply: {S}")
+        assert (np.sum(np.abs(D-S)) < np.sum(np.abs(D))*0.001)
+
+        if(((np.sum(D) - np.sum(self.getBudgets())) > np.sum(self.getBudgets())*0.001) or ((np.sum(X @ p) - np.sum(self.getBudgets())) > np.sum(self.getBudgets())*0.001)):
+            print(f"Model money spent: {np.sum(D)}\nActual Money Present: {np.sum(self.getBudgets())}")
+
+        assert abs( np.sum(D) - np.sum(self.getBudgets()) ) < np.sum(D)*0.001
+        assert abs( np.sum(X @ p) - np.sum(self.getBudgets()) ) < np.sum(X @ p)*0.001
 
         return (D, S)
 
-    def solveMarket(self, utilities = "quasi-linear"):
+    def solveMarket(self, utilities = "quasi-linear", printResults = True):
+        np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
         """
         Parameters:
         utilities(string): Denotes the utilities used to solve market
@@ -109,33 +123,45 @@ class FisherMarket:
         prices.
         """
         if (utilities == "quasi-linear"):
-            alloc, prices = self.solveQuasiLinear()
+            alloc, prices = self.solveQuasiLinear(printResults)
         elif (utilities == "linear"):
-            alloc, prices = self.solveLinear()
+            alloc, prices = self.solveLinear(printResults)
         else:
             print(f"Invalid Utility Model : '{utilities}'")
-            exit()
+            sys.exit()
 
-        # print( f"prices before = {prices}\n")
-        itemCounter = 0
-        itemNumber = 0
-        X = np.zeros((self.numberOfBuyers(), self.numberOfGoods()))
-        p = []
-        for item in range(self.valuations.shape[1]):
-            # print(f"itemNumber = {itemNumber}, itemCounter = {itemCounter}, numGood = {self.numGoodsVec[itemNumber]}")
-            X[:, itemNumber] += alloc[:,item]
-            itemCounter += 1
+        p = np.multiply(prices, (1/self.numGoodsVec))
 
-            if (itemCounter == self.numGoodsVec[itemNumber]):
-                p.append(prices[item])
-                itemNumber += 1
-                itemCounter = 0
+        X = alloc * self.numGoodsVec
 
-        p = np.array(p)
-        # print( f"prices after = {p}\n")
+        numberOfEachGood = np.sum(X, axis = 0)
+
+        if(printResults):
+            print(f"Initial budgets: {self.budgets}\nFinal budgets: {X @ p}")
+
+        # Check that number of goods inputted is equal to the number of goods sold
+        if(np.sum(np.abs(self.numGoodsVec - numberOfEachGood)) > 0.0001):
+            print(f"Supply of Goods Vector: {self.numGoodsVec}\nNumber of Goods\
+             Allocated: {numberOfEachGood}")
+
+        assert np.sum(np.abs(self.numGoodsVec - numberOfEachGood)) < 0.0001
+
+        # Check that total money spent by buyers is leq to the total budget
+        # of the buyers
+        if(((np.dot(numberOfEachGood, p) - np.sum(self.budgets)) > 0.001) or
+            (np.sum(X @ p - self.budgets) > np.sum(self.budgets)*0.001)):
+            print(f"Money spent by buyers: {X @ p}\nBuyers' budgets: {self.budgets}")
+        assert (np.dot(numberOfEachGood, p) - np.sum(self.budgets)) < np.sum(self.budgets)*0.001
+
+        # Check that the money spent by each buyer is less than their budget
+        if(np.sum(np.abs(X @ p - self.budgets)) > np.sum(self.budgets)*0.001):
+            print(f"Money spent by buyers: {X @ p}\nBuyers' budgets: {self.budgets}")
+        assert np.sum(np.abs(X @ p - self.budgets)) < np.sum(self.budgets)*0.001
+
+
         return (X,p)
 
-    def solveQuasiLinear(self):
+    def solveQuasiLinear(self, printResults = True):
         """
         Solves Fisher Market with Quasi-Linear utilities
 
@@ -146,7 +172,47 @@ class FisherMarket:
         numberOfGoods = np.sum(self.numGoodsVec).astype(int)
         numberOfBuyers = self.numberOfBuyers()
 
-        ########### Primal: Output => Prices ###########
+        ########### Primal: Output => Allocation #########
+
+        # Variables of program
+        alloc = cp.Variable((numberOfBuyers, numberOfGoods))
+        values = cp.Variable(numberOfBuyers)
+        utils = cp.Variable(numberOfBuyers)
+
+        # Objective
+        obj = cp.Maximize(self.budgets.T @ (cp.log(utils) - values))
+
+        constraints = [utils <= (cp.sum(cp.multiply(self.valuations, alloc), axis = 1) + values),
+                        cp.sum(alloc, axis = 0) <= 1,
+                        alloc >= 0,
+                        values >= 0]
+
+
+        # Convex Program for dual
+        dual = cp.Problem(obj, constraints)
+
+
+        # Solve Program
+        dual.solve()  # Returns the optimal value.
+
+        X = alloc.value
+
+        #   Check if every good is allocated.
+        if(np.sum(np.sum(X, axis = 0) - 1.0) > 0.0001):
+            print(f"Allocation: {X}")
+        assert np.sum(np.sum(X, axis = 0) - 1.0) < 0.0001
+
+        # Get dual value directly from CVXPY
+        p = constraints[1].dual_value
+        if(printResults):
+            print("Status of program:", dual.status)
+            print(f"Allocation = {X}\nPrices = {p}")
+            print(f"Sum of prices =  {np.sum(p)}\nPrices * Supply of goods = {np.dot(self.numGoodsVec, p)}")
+
+        return (X, p)
+
+
+        ########### Dual: Output => Prices ###########
 
         # Variables of program
         prices = cp.Variable(numberOfGoods)
@@ -156,7 +222,7 @@ class FisherMarket:
         obj = cp.Minimize(cp.sum(prices) - self.budgets.T @ cp.log(betas))
 
         # Constraints
-        constraints = [prices[j] >= cp.multiply(self.valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1]
+        constraints = ([prices[j] >= cp.multiply(self.valuations[:,j], betas) for j in range(numberOfGoods)] + [betas <= 1])
 
 
         # Convex Program for primal
@@ -168,34 +234,10 @@ class FisherMarket:
         # print("Optimal Value Primal (Price): ", primal.value)
         p = prices.value
 
-        ########### Dual: Output => Allocation #########
-
-        # Variables of program
-        alloc = cp.Variable((numberOfBuyers, numberOfGoods))
-        values = cp.Variable(numberOfBuyers)
-        utils = cp.Variable(numberOfBuyers)
-
-        # Objective
-        obj = cp.Maximize(cp.sum(cp.multiply(self.budgets, cp.log(utils)) - values))
-
-        constraints = [utils <= cp.sum(cp.multiply(self.valuations, alloc), axis = 1) + values,
-                        cp.sum(alloc, axis = 0) <= 1,
-                        alloc >= 0,
-                        values >= 0]
-
-        # Convex Program for dual
-        dual = cp.Problem(obj, constraints)
-
-
-        # Solve Program
-        dual.solve()  # Returns the optimal value.
-        # print("Dual Status (Allocation):", dual.status)
-        # print("Optimal Value Dual (Allocation)", dual.value)
-        X = alloc.value
 
         return (X, p)
 
-    def solveLinear(self):
+    def solveLinear(self, printResults = True):
         """
         Solves Fisher Market with Linear utilities
 
@@ -226,12 +268,21 @@ class FisherMarket:
 
         # Solve Program
         primal.solve()  # Returns the optimal value.
-        # print("Primal Status (Allocation):", primal.status)
-        # print("Optimal Value Primal (Allocation)", primal.value)
+
         X = alloc.value
+        assert np.sum(np.sum(X, axis = 0) - 1.0) < 0.0001
 
+        # Get dual value directly from CVXPY
+        p = constraints[1].dual_value
+        if(printResults):
+            print("Primal Status (Allocation):", primal.status)
+            print(f"Allocation: {X}\nPrices{p}")
+            print(f"Sum of prices: {np.sum(p)}\nPrices * Supply of goods = {np.dot(self.numGoodsVec, p)}")
 
-        ########### Primal: Output => Prices ###########
+        return (X, p)
+
+        # Dual program
+        ########### Dual: Output => Prices ###########
 
         # Variables of program
         prices = cp.Variable(numberOfGoods)

@@ -24,3 +24,19 @@ market1.solveMarket("linear")
 
 # Get demand and supply for each good (in dollar)
 market1.getDS("quasi-linear")
+
+# Matrix of valuations: |buyers| x |goods|
+valuations = np.array([[3, 2, 1], [1, 2, 3]])
+
+# Budgets of buyers: |buyers|
+
+budgets = np.array([5, 5])
+
+# Create Market
+market1 = m.FisherMarket(valuations, budgets)
+
+# Solve for market prices and allocations for desired utility function structure.
+
+# Current Options are 'quasi-linear' and 'linear'
+market1.solveMarket("quasi-linear")
+market1.solveMarket("linear")
