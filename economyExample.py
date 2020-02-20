@@ -94,7 +94,7 @@ demandV = np.array([[1, 2, 3], [3, 2, 1], [2, 2, 2]])
 supplyV = np.array([[1, 2, 3], [3, 2, 1], [2, 2, 2]])
 
 # Budgets of firms: |buyers|
-supplyB = np.array([5, 5, 5])
+supplyB = np.array([60, 25, 5])
 
 
 
@@ -105,4 +105,4 @@ market1 = e.Economy(supplyV, supplyB, demandV)
 market1.solve(0.001, "quasi-linear") # For this one definitely contraction
 
 
-market1.solve(0.001, "linear") # For this one definitely contraction
+market1.solve(0.005, "linear") # For this one definitely contraction
