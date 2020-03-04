@@ -145,7 +145,7 @@ class FisherMarket:
             print(f"Supply of Goods Vector: {self.numGoodsVec}\nNumber of Goods\
              Allocated: {numberOfEachGood}")
 
-        assert np.sum(np.abs(self.numGoodsVec - numberOfEachGood)) < 0.0001
+        # assert np.sum(np.abs(self.numGoodsVec - numberOfEachGood)) < 0.001
 
         # Check that total money spent by buyers is leq to the total budget
         # of the buyers

@@ -30,27 +30,3 @@ fv.verify(X, p, valuations, budgets, utility = "linear")
 
 # Get demand and supply for each good (in dollar)
 market1.getDS("quasi-linear")
-
-
-
-############################### Example 2 ######################################
-
-# Matrix of valuations: |buyers| x |goods|
-valuations = np.array([[1, 1, 1], [1, 1, 1]])
-
-# Budgets of buyers: |buyers|
-
-budgets = np.array([5, 5])
-
-# Create Market
-market1 = m.FisherMarket(valuations, budgets)
-
-# Solve for market prices and allocations for desired utility function structure.
-
-# Current Options are 'quasi-linear' and 'linear'
-X, p = market1.solveMarket("linear")
-# fv.verify(X, p, valuations, budgets, utility = "linear")
-
-
-X, p = market1.solveMarket("quasi-linear")
-# fv.verify(X, p, valuations, budgets, utility = "quasi-linear")

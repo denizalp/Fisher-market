@@ -85,7 +85,7 @@ market1.solve(0.0001, "linear") # For this one definitely contraction
 
 
 
-############ Example 3: Not contraction (because goods are not good?) ############
+############ Example 3 ############
 
 # Matrix of valuations of buyers/workers: |buyers| x |goods|
 demandV = np.array([[1, 2, 3], [3, 2, 1], [2, 2, 2]])
