@@ -26,7 +26,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("linear", printResults = False)
+    Q, p = market1.solveMarket("linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -83,7 +83,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("linear", printResults = False)
+    Q, p = market1.solveMarket("linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -137,7 +137,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("linear", printResults = False)
+    Q, p = market1.solveMarket("linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -192,7 +192,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("quasi-linear", printResults = False)
+    Q, p = market1.solveMarket("quasi-linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -247,7 +247,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("quasi-linear", printResults = False)
+    Q, p = market1.solveMarket("quasi-linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -302,7 +302,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("quasi-linear", printResults = False)
+    Q, p = market1.solveMarket("quasi-linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -357,7 +357,7 @@ while(iter <= 100):
     # Solve for market prices and allocations for desired utility function structure.
 
     # Current Options are 'quasi-linear' and 'linear'
-    X, p = market1.solveMarket("quasi-linear", printResults = False)
+    Q, p = market1.solveMarket("quasi-linear", printResults = False)
 
     prices.append(p)
     budgets0.append(budgets[0])
@@ -396,3 +396,77 @@ plt.xlabel("Budget of Buyer 3")
 plt.ylabel("Prices")
 plt.legend()
 plt.savefig("graph7.png")
+
+############## Individual Markets of The economy example  ##################
+
+############################### Example 1 ######################################
+
+# Matrix of valuations: |buyers| x |goods|
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[8.0, 2.0], [2.0, 5.0]])
+
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[5.0, 3.0], [1.0, 5.0]])
+
+# Budgets of firms: |buyers|
+budgets = np.array([0.0, 10.0])
+
+iter = 0
+prices = []
+wages = []
+budgets0 = []
+budgets1 = []
+while(iter <= 100):
+    iter += 1
+
+
+    # Create Market
+    demand = m.FisherMarket(demandV, budgets)
+    supply =  m.FisherMarket(supplyV, budgets)
+    # Solve for market prices and allocations for desired utility function structure.
+
+    # Current Options are 'quasi-linear' and 'linear'
+    Q, p = demand.solveMarket("linear", printResults = False)
+    X, w = supply.solveMarket("linear", printResults = False)
+    wages.append(w)
+    prices.append(p)
+    budgets0.append(budgets[0])
+    budgets1.append(budgets[1])
+
+    # print(f"budget[0] = {budgets[0]}\nbudget[1] = {budgets[1]}")
+    budgets[0] += 0.1
+    budgets[1] -= 0.1
+
+prices = np.array(prices)
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets0, prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets0, prices[:,1], "-b", label = "Good 2")
+plt.title("Linear: Prices vs Budget of Buyer 1\nValuations: [8.0, 2.0], [2.0, 5.0]")
+plt.xlabel("Budget of Buyer 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets1, prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets1, prices[:,1], "-b", label = "Good 2")
+plt.title("Linear: Prices vs Budget of Buyer 2\nValuations: [8.0, 2.0], [2.0, 5.0]")
+plt.xlabel("Budget of Buyer 2")
+plt.ylabel("Wages")
+plt.legend()
+
+wages = np.array(wages)
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets0, wages[:,0], "-g", label = "Good 1")
+ax1.plot(budgets0, wages[:,1], "-b", label = "Good 2")
+plt.title("Linear: Wages vs Budget of Firms 1\nValuations: [5.0, 3.0], [1.0, 5.0]")
+plt.xlabel("Budget of firm 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets1, wages[:,0], "-g", label = "Good 1")
+ax2.plot(budgets1, wages[:,1], "-b", label = "Good 2")
+plt.title("Linear: Wages vs Budget of Firms 2\nValuations: [5.0, 3.0], [1.0, 5.0]")
+plt.xlabel("Budget of firm 2")
+plt.ylabel("Prices")
+plt.legend()
