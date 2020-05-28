@@ -1,0 +1,701 @@
+# Fisher Markets
+
+In the following sections, we provide experiments to show the behavior of fisher markets as a function of the budgets of buyers.
+
+```{python, echo=False}
+# Setup
+import os
+import sys
+sys.path.insert(0, '')
+os.chdir("/home/denizalp/Documents/Github/market_models")
+import fisherMarket as fm
+import economy as m
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+## Model 1 - Fisher Market with Linear Utilities
+**Example 1**: Market wih **2 buyers** and **3 goods**. Below is the valuation table for each buyer:\\
+
+|Buyers \char \\ Goods   | 1  | 2  |  3 |
+|---|---|---|---|
+| 1 | 1 | 2 | 3  |
+| 2  | 3  | 2  | 1  |
+
+
+
+```{python}
+# Matrix of valuations: |buyers| x |goods|
+valuations = np.array([[1, 2, 3], [3, 2, 1]])
+
+# Budgets of Buyers: |buyers|
+budgets = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+prices = []
+budgets0 = []
+budgets1 = []
+heurist = []
+while(iter <= 100):
+    iter += 1
+
+
+    # Create Market
+    market1 = fm.FisherMarket(valuations, budgets)
+
+    # Solve for market prices and allocations for desired utility function structure.
+
+    # Current Options are 'quasi-linear' and 'linear'
+    Q, p = market1.solveMarket("linear", printResults = False)
+
+    prices.append(p)
+    #heurist.append(np.array([ b* for b in budgets]))
+    budgets0.append(budgets[0])
+    budgets1.append(budgets[1])
+
+    budgets[0] += 0.1
+    budgets[1] -= 0.1
+
+prices = np.array(prices)
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets0, prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets0, prices[:,1], "-b", label = "Good 2")
+ax1.plot(budgets0, prices[:,2], "-r", label = "Good 3")
+plt.title("Linear: Prices vs Budget of Buyer 1")
+plt.xlabel("Budget of Buyer 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets1, prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets1, prices[:,1], "-b", label = "Good 2")
+ax2.plot(budgets1, prices[:,2], "-r", label = "Good 3")
+plt.title("Linear: Prices vs Budget of Buyer 2")
+plt.xlabel("Budget of Buyer 2")
+plt.ylabel("Prices")
+plt.legend()
+```
+
+## Model 2 - Fisher Market with Quasi-linear Utilities
+
+**Example 2**: Market wih **2 buyers** and **3 goods**. Below is the valuation table for each buyer:\\
+
+|Buyers \char \\ Goods   | 1  | 2  |  3 |
+|---|---|---|---|
+| 1 | 1 | 2 | 3  |
+| 2  | 3  | 2  | 1  |
+
+```{python}
+
+# Matrix of valuations: |buyers| x |goods|
+valuations = np.array([[1, 2, 3], [3, 2, 1]])
+
+# Budgets of buyers: |buyers|
+budgets = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+prices = []
+budgets0 = []
+budgets1 = []
+while(iter <= 100):
+    iter += 1
+
+
+    # Create Market
+    market1 = fm.FisherMarket(valuations, budgets)
+
+    # Solve for market prices and allocations for desired utility function structure.
+
+    # Current Options are 'quasi-linear' and 'linear'
+    Q, p = market1.solveMarket("quasi-linear", printResults = False)
+
+    prices.append(p)
+    budgets0.append(budgets[0])
+    budgets1.append(budgets[1])
+
+    # print(f"budget[0] = {budgets[0]}\nbudget[1] = {budgets[1]}")
+    budgets[0] += 0.1
+    budgets[1] -= 0.1
+
+prices = np.array(prices)
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets0, prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets0, prices[:,1], "-b", label = "Good 2")
+ax1.plot(budgets0, prices[:,2], "-r", label = "Good 3")
+plt.title("Quasi: Prices vs Budget of Buyer 1")
+plt.xlabel("Budget of Buyer 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets1, prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets1, prices[:,1], "-b", label = "Good 2")
+ax2.plot(budgets1, prices[:,2], "-r", label = "Good 3")
+plt.title("Prices vs Budget of Buyer 2")
+plt.xlabel("Budget of Buyer 2")
+plt.ylabel("Prices")
+plt.legend()
+```
+
+
+# Economic Models
+
+In this section, we model an economy with a supply side and a demand side. Both sides of the economy are modelled as fisher markets with linear utilities. In the *demand side*, buyer/worker have preferences over goods. In the *supply side*, firms have preferences over workers. The economy is a function of the budgets of the firms. The budgets of the firms are spent on workers; workers then in turn spend their wages on the goods produced by the firms.
+
+## Model 1 - Supply: Linear / Demand: Linear
+
+**Example 3**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 8 | 2 |
+| 2  | 2  | 5  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 5 | 3 |
+| 2  | 1  | 5  |
+_Demand Valuations_
+
+
+Below is a graph of the price of each good in the economy as a function of the budgets inputted to firms.
+```{python}
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV =np.array([[8.0, 2.0], [2.0, 5.0]])
+
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[5.0, 3.0], [1.0, 5.0]])
+
+
+# Budgets of firms: |buyers|
+supplyB = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+budgets = []
+prices = []
+
+while(iter < 100):
+    budgets.append(supplyB.tolist())
+    market = m.Economy(supplyV, supplyB, demandV)
+    Q, p, X, w, B = market.market_budget(supplyB, "linear", "linear")
+    prices.append(p.tolist())
+    supplyB[0]  += 0.1
+    supplyB[1] -= 0.1
+    iter += 1
+budgets = np.array(budgets)
+prices = np.array(prices)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets[:,0], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget of firm 1 vs. Output Prices")
+plt.xlabel("Input budget firm 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets[:,1], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget of Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget of Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+```
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input budget.
+
+```{python, echo = False}
+##################### Prices substracted to check roots ########################
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax1.plot(budgets[:,0], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax2.plot(budgets[:,1], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```
+
+
+**Example 4**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 5 |
+| 2  | 5  | 0  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 4 |
+| 2  | 4  | 0  |
+_Demand Valuations_
+
+
+Below is a graph of the price of each good in the economy as a function of the budgets inputted to firms.
+```{python}
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[0.0, 5.0], [0.0, 5.0]])
+
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[0.0, 4.0], [4.0, 0.0]])
+
+# Budgets of firms: |buyers|
+supplyB = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+budgets = []
+prices = []
+
+while(iter < 100):
+    budgets.append(supplyB.tolist())
+    market = m.Economy(supplyV, supplyB, demandV)
+    Q, p, X, w, B = market.market_budget(supplyB, "linear", "linear")
+    prices.append(p.tolist())
+    supplyB[0]  += 0.1
+    supplyB[1] -= 0.1
+    iter += 1
+budgets = np.array(budgets)
+prices = np.array(prices)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets[:,0], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget of firm 1 vs. Output Prices")
+plt.xlabel("Input budget firm 1")
+plt.ylabel("Prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets[:,1], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget of Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget of Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+```
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input budget.
+
+```{python, echo = False}
+##################### Prices substracted to check roots ########################
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax1.plot(budgets[:,0], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax2.plot(budgets[:,1], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```
+# Model 2 - Supply: Quasi-Linear with Budgets / Demand with Budgets
+
+
+**Example 3**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 8 | 2 |
+| 2  | 2  | 5  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 5 | 3 |
+| 2  | 1  | 5  |
+_Demand Valuations_
+
+
+```{python}
+
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[8.0, 2.0], [2.0, 5.0]])
+
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[5.0, 3.0], [1.0, 5.0]])
+
+# Budgets of firms: |buyers|
+supplyB = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+budgets = []
+prices = []
+
+while(iter < 100):
+    budgets.append(supplyB.tolist())
+    market = m.Economy(supplyV, supplyB, demandV)
+    Q, p, X, w, B = market.market_budget(supplyB, "quasi-linear", "quasi-linear")
+    prices.append(p.tolist())
+    supplyB[0]  += 0.1
+    supplyB[1] -= 0.1
+    iter += 1
+budgets = np.array(budgets)
+prices = np.array(prices)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets[:,0], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets[:,1], prices[:,1], "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices 1")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+```
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input budget.
+```{python, echo = False}
+
+##################### Prices substracted to check roots ########################
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax1.plot(budgets[:,0], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax2.plot(budgets[:,1], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+
+```
+
+**Example 4**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 5 |
+| 2  | 5  | 0  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 4 |
+| 2  | 4  |   |
+_Demand Valuations_
+
+
+
+```{python}
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[0.0, 5.0], [5.0, 0.0]])
+
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[0.0, 4.0], [4.0, 0.0]])
+
+# Budgets of firms: |buyers|
+supplyB = np.array([0.0, 10.0])
+```
+
+```{python, echo = False}
+iter = 0
+budgets = []
+prices = []
+
+while(iter < 100):
+    budgets.append(supplyB.tolist())
+    market = m.Economy(supplyV, supplyB, demandV)
+    Q, p, X, w, B = market.market_budget(supplyB, "quasi-linear", "quasi-linear")
+    prices.append(p.tolist())
+    supplyB[0]  += 0.1
+    supplyB[1] -= 0.1
+    iter += 1
+budgets = np.array(budgets)
+prices = np.array(prices)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], prices[:,0], "-g", label = "Good 1")
+ax1.plot(budgets[:,0], prices[:,1], "-b", label = "Good 2")
+plt.title("Input Budget Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], prices[:,0], "-g", label = "Good 1")
+ax2.plot(budgets[:,1], prices[:,1], "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices 1")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+```
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input budget.
+```{python, echo = False}
+
+##################### Prices substracted to check roots ########################
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(budgets[:,0], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax1.plot(budgets[:,0], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 1 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(budgets[:,1], (prices[:,0] - budgets[:,0]), "-g", label = "Good 1")
+ax2.plot(budgets[:,1], (prices[:,1] - budgets[:,1]), "-b", label = "Good 2")
+plt.title("Input Budget for Firm 2 vs. Output Prices")
+plt.xlabel("Input Budget for Firm 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+
+```
+
+# Model 3 - Supply: Quasi-Linear without Budgets / Demand without Budgets
+
+
+**Example 3**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 8 | 2 |
+| 2  | 2  | 5  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 5 | 3 |
+| 2  | 1  | 5  |
+_Demand Valuations_
+
+```{python}
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[8.0, 2.0], [2.0, 5.0]])
+
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[5.0, 3.0], [1.0, 5.0]])
+
+# Initial prices
+priceIn = np.array([0.0, 10.0])
+```
+
+
+```{python, echo = False}
+iter = 0
+pricesIn = []
+pricesOut = []
+
+while(iter < 100):
+    pricesIn.append(priceIn.tolist())
+
+    # Calculate productivity of each worker in each firm
+    supplyProd = supplyV * priceIn
+
+    # Budgets of firms: |buyers|
+    supplyB = np.array([10000.0, 10000.0])#np.sum(supplyProd, axis = 1)*10
+
+    # Create supply market
+    supply = fm.FisherMarket(V = supplyProd, B = supplyB)
+    supplyD, supplyS = supply.getDS("quasi-linear") # solve for demand & supply
+    X, w = supply.getCache() # store the allocation
+
+    # Calculate demand "productivity"
+    demandProd = demandV*w
+
+    # Create the new demand side market
+    demand = fm.FisherMarket(V = demandProd, B = supplyB)
+    demandD, demandS = demand.getDS("quasi-linear")  #solve for demand & supply
+
+    Q, priceOut = demand.getCache()
+
+    pricesOut.append(priceOut.tolist())
+    priceIn[0]  += 0.1
+    priceIn[1] -= 0.1
+    iter += 1
+
+pricesIn = np.array(pricesIn)
+pricesOut = np.array(pricesOut)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(pricesIn[:,0], pricesOut[:,0], "-g", label = "Good 1")
+ax1.plot(pricesIn[:,0], pricesOut[:,1], "-b", label = "Good 2")
+plt.title("Input Price for Good 1 vs. Output Prices")
+plt.xlabel("Input Price for Good 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(pricesIn[:,1], pricesOut[:,0], "-g", label = "Good 1")
+ax2.plot(pricesIn[:,1], pricesOut[:,1], "-b", label = "Good 2")
+plt.title("Input price for Good 2 vs. Output Prices")
+plt.xlabel("Input Price Good 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```
+
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input price.
+
+```{python, echo = False}
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(pricesIn[:,0], (pricesOut[:,0] - pricesIn[:,0]), "-g", label = "Good 1")
+ax1.plot(pricesIn[:,0], (pricesOut[:,1] - pricesIn[:,1]), "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices 1")
+plt.xlabel("Input price good 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(pricesIn[:,1], (pricesOut[:,0] - pricesIn[:,0]), "-g", label = "Good 1")
+ax2.plot(pricesIn[:,1], (pricesOut[:,1] - pricesIn[:,1]), "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices 1")
+plt.xlabel("Input price good 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```
+**Example 4**: Economy wih **2 buyers/workers** and **2 firms/goods**. Below are respectively the valuation tables for the suppy side and demand side:\\
+
+
+|Firm \char \\ Worker   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 5 |
+| 2  | 5  | 0  |
+_Supply Valuations_
+
+|Buyer \char \\ Good   | 1  | 2  |
+|---|---|---|
+| 1 | 0 | 4 |
+| 2  | 4  | 0  |
+_Demand Valuations_
+
+```{python}
+# Matrix of valuations of buyers/workers: |buyers| x |goods|
+demandV = np.array([[0.0, 5.0], [5.0, 0.0]])
+
+# Matrix of valuations of firms: |firms| x |workers|
+supplyV = np.array([[0.0, 4.0], [4.0, 0.0]])
+
+# Initial prices
+priceIn = np.array([0.0, 10.0])
+```
+
+
+```{python, echo = False}
+iter = 0
+pricesIn = []
+pricesOut = []
+
+while(iter < 100):
+    pricesIn.append(priceIn.tolist())
+
+    # Calculate productivity of each worker in each firm
+    supplyProd = supplyV * priceIn
+
+    # Budgets of firms: |buyers|
+    supplyB = np.array([10000.0, 10000.0])#np.sum(supplyProd, axis = 1)*10
+
+    # Create supply market
+    supply = fm.FisherMarket(V = supplyProd, B = supplyB)
+    supplyD, supplyS = supply.getDS("quasi-linear") # solve for demand & supply
+    X, w = supply.getCache() # store the allocation
+
+    # Calculate demand "productivity"
+    demandProd = demandV*w
+
+    # Create the new demand side market
+    demand = fm.FisherMarket(V = demandProd, B = supplyB)
+    demandD, demandS = demand.getDS("quasi-linear")  #solve for demand & supply
+
+    Q, priceOut = demand.getCache()
+
+    pricesOut.append(priceOut.tolist())
+    priceIn[0]  += 0.1
+    priceIn[1] -= 0.1
+    iter += 1
+
+pricesIn = np.array(pricesIn)
+pricesOut = np.array(pricesOut)
+
+############################## GRAPHS #################################
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(pricesIn[:,0], pricesOut[:,0], "-g", label = "Good 1")
+ax1.plot(pricesIn[:,0], pricesOut[:,1], "-b", label = "Good 2")
+plt.title("Input Price for Good 1 vs. Output Prices")
+plt.xlabel("Input Price for Good 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(pricesIn[:,1], pricesOut[:,0], "-g", label = "Good 1")
+ax2.plot(pricesIn[:,1], pricesOut[:,1], "-b", label = "Good 2")
+plt.title("Input price for Good 2 vs. Output Prices")
+plt.xlabel("Input Price Good 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```
+
+Let's now look at the roots of this function. Below are the same graphs except we substract from the output price the input price.
+
+```{python, echo = False}
+
+fig = plt.figure(figsize = (12,5))
+ax1 = plt.subplot(1, 2, 1)
+ax1.plot(pricesIn[:,0], (pricesOut[:,0] - pricesIn[:,0]), "-g", label = "Good 1")
+ax1.plot(pricesIn[:,0], (pricesOut[:,1] - pricesIn[:,1]), "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices")
+plt.xlabel("Input price good 1")
+plt.ylabel("Output prices")
+
+ax2 = plt.subplot(1, 2, 2)
+ax2.plot(pricesIn[:,1], (pricesOut[:,0] - pricesIn[:,0]), "-g", label = "Good 1")
+ax2.plot(pricesIn[:,1], (pricesOut[:,1] - pricesIn[:,1]), "-b", label = "Good 2")
+plt.title("Input price vs. Output Prices 1")
+plt.xlabel("Input price good 2")
+plt.ylabel("Output prices")
+plt.legend()
+plt.show()
+```

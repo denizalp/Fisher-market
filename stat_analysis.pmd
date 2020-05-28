@@ -1,0 +1,174 @@
+# Statistical Analysis of Equilibrium Prices
+
+```{python, evaluate=True}
+# Setup
+import os
+import sys
+sys.path.insert(0, '')
+os.chdir("/home/denizalp/Documents/Github/market_models")
+import fisherMarket as fm
+import numpy as np
+import matplotlib.pyplot as plt
+```
+We will now treat the fisher market's outcome as a statistical estimator. That is, we would like to understand how does the point estiamtor returned by the convex program for the fisher market perform compared to best statistical estimators.
+
+# Linear Fisher Market
+By the KKT conditions, in the linear fisher market the output prices are given by:
+\begin{align}
+p_j = b_i \frac{v_{ij}}{\sum_{j\in [m]}X_{ij} v_{ij}}
+\end{align}
+We want to analyze the distribution of this quantity assuming a distribution of the values of the buyers.
+In this model, we assume that there is a true market prices vector $\boldsymbol{p}^*$ and that each buyer's valuation $v_{ij}$ comes from a gamma distribution that is:
+
+\begin{align}
+\forall i \in [n], & \boldsymbol{v}_{ij} \sim \text{Gamma}(1, p^*_j)
+\end{align}
+
+where $\boldsymbol{v}_{ij}$ is the valuation vector for the $i^{th}$ buyer.
+
+We will try to compare the statistical estimate returned by the fisher linear convex program to the best estimator for $\forall j \in [m], \ p_j^*$. First, let's derive such an estimator. Note that the mean of the $v_{ij}'s$ is:
+\begin{align}
+\mathbb{E}[v_{ij}] = p^*_j
+\end{align}
+
+The best estimator for the mean of the distribution is the sample mean as a result, we will compare the fisher linear market prices to:
+
+\begin{align}
+\forall j \in [m], \ \ \mu_j = \frac{\sum_{i \in [n]} v_{ij}}{n}
+\end{align}
+
+We declare the following environment:
+```{python}
+# Number of bettors
+n = 5
+
+# Number of horses
+m = 3
+
+# Budgets
+budgets = np.array([0.2, 0.2, 0.2, 0.2, 0.2])
+
+# True track probabilities
+true_v = np.array([0.3, 0.2, 0.5])
+```
+We will first estimate $\boldsymbol{p}^*$ using the fisher market's outcome for 200 simulation:
+
+```{python}
+fisher_prices = []
+means = []
+
+for i in range(1000):
+    # Sample Valuations
+    V = np.array([np.random.gamma(1, v, size =n) for v in true_v]).T
+
+    # Store mean of valuations
+    means.append(np.mean(V, axis = 0))
+
+    # Find estimates given by fisher market
+    market = fm.FisherMarket(V, budgets)
+    X, p =  market.solveMarket("linear", printResults = False)
+    fisher_prices.append(p) # Store fisher prices
+fisher_prices = np.array(fisher_prices)
+means = np.array(means)
+```
+
+We first plot the histogram of fisher prices and the true price.
+
+```{python}
+# Plotting Fisher prices
+fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+
+for i in range(3):
+    axs[i].hist(fisher_prices[:,i], bins = 20, alpha = 0.7, label = "Estimated Prices")
+    axs[i].axvline(x = true_v[i], color = "red", label = "True Mean")
+    axs[i].axvline(x = np.mean(fisher_prices[:,i]), color = "Green", label = "Mean of Price Estimates")
+axs[1].set_xlabel("Price")
+axs[0].set_ylabel("Frequency")
+plt.legend(bbox_to_anchor=(1.05, 1), fontsize=7, loc='lower center')
+plt.show()
+
+```
+We then plot the histogram of the mean valuations:
+
+```{python}
+# Plotting Fisher prices
+fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+
+for i in range(3):
+    axs[i].hist(means[:,i], bins = 20, alpha = 0.8, label = "Estimated Prices")
+    axs[i].axvline(x = true_v[i], color = "red", label = "True Mean")
+    axs[i].axvline(x = np.mean(means[:,i]), color = "Green", label = "Mean of Price Estimates")
+
+axs[1].set_xlabel("Price")
+axs[0].set_ylabel("Frequency")
+plt.legend(bbox_to_anchor=(1.05, 1), fontsize=7, loc='lower center')
+plt.show()
+```
+# Quasi-linear Fisher
+
+```{python}
+# Number of bettors
+n = 5
+
+# Number of horses
+m = 3
+
+# Budgets
+budgets = np.array([0.2, 0.2, 0.2, 0.2, 0.2])
+
+# True track probabilities
+true_v = np.array([0.3, 0.2, 0.5])
+```
+We will first estimate $\boldsymbol{p}^*$ using the fisher market's outcome for 200 simulation:
+
+```{python}
+fisher_prices = []
+means = []
+
+for i in range(1000):
+    # Sample Valuations
+    V = np.array([np.random.gamma(1, v, size =n) for v in true_v]).T
+
+    # Store mean of valuations
+    means.append(np.mean(V, axis = 0))
+
+    # Find estimates given by fisher market
+    market = fm.FisherMarket(V, budgets)
+    X, p =  market.solveMarket("quasi-linear", printResults = False)
+    fisher_prices.append(p) # Store fisher prices
+fisher_prices = np.array(fisher_prices)
+means = np.array(means)
+```
+
+We first plot the histogram of fisher prices and the true price.
+
+```{python}
+# Plotting Fisher prices
+fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+
+for i in range(3):
+    axs[i].hist(fisher_prices[:,i], bins = 20, alpha = 0.7, label = "Estimated Prices")
+    axs[i].axvline(x = true_v[i], color = "red", label = "True Mean")
+    axs[i].axvline(x = np.mean(fisher_prices[:,i]), color = "Green", label = "Mean of Price Estimates")
+axs[1].set_xlabel("Price")
+axs[0].set_ylabel("Frequency")
+plt.legend(bbox_to_anchor=(1.05, 1), fontsize=7, loc='lower center')
+plt.show()
+
+```
+We then plot the histogram of the mean valuations:
+
+```{python}
+# Plotting Fisher prices
+fig, axs = plt.subplots(1, 3, sharey=True, tight_layout=True)
+
+for i in range(3):
+    axs[i].hist(means[:,i], bins = 20, alpha = 0.8, label = "Estimated Prices")
+    axs[i].axvline(x = true_v[i], color = "red", label = "True Mean")
+    axs[i].axvline(x = np.mean(means[:,i]), color = "Green", label = "Mean of Price Estimates")
+
+axs[1].set_xlabel("Price")
+axs[0].set_ylabel("Frequency")
+plt.legend(bbox_to_anchor=(1.05, 1), fontsize=7, loc='lower center')
+plt.show()
+```
