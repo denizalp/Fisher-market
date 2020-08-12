@@ -1,0 +1,58 @@
+---
+title: "AD_CD_iter"
+author: "Denizalp Goktas"
+date: "6/25/2020"
+output: pdf_document
+---
+
+```{r}
+# Load libraries 
+library(tidyverse)
+
+# Declare iterative process
+get_prices <- function(prices, consendows, valuations) 
+  {
+    return( t(valuations) %*% consendows %*% prices )
+}
+
+iterate <- function(prices, consendows, valuations) {
+  iter <- 1
+  prev_prices <- prices*10
+  price_hist <- c(iter, prices)
+  while(iter <= 100 && sum(abs(prices - prev_prices)) > 0.001)
+  {
+      iter <-  iter + 1
+      prev_prices <- prices
+      prices <-  get_prices(prices, consendows, valuations) 
+      price_hist <- rbind(price_hist, c(iter, prices))
+      
+  }
+  if (iter > 100)
+  {
+    print("Process has not converged")
+  }
+  else
+  {
+    print("Process has converged with prices:")
+    print(prices)
+  }
+  print(price_hist)
+  return (list(prices, price_hist))
+}
+```
+
+
+```{r}
+# Declare Economy
+valuations <-  matrix(c(0.3,  0.7, 0.8, 0.2, 0.4, 0.6), nrow = 3, ncol = 2, byrow = T)
+consendows <-  matrix(c(0.7, 0.5, 0.2, 0.1, 0.1, 0.4), nrow = 3, ncol = 2, byrow = T)
+prices_0 <-  c(49/59, 49/59)
+```
+
+```{r}
+# Make graph
+results = iterate(prices_0, consendows, valuations)
+
+ggplot(data = result[2]) + ggplo
+
+```

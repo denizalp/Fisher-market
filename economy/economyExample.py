@@ -1,3 +1,4 @@
+#%%
 import numpy as np
 import economy as e
 
@@ -78,14 +79,14 @@ Q, p, X, w, B = market1.solve(0.001, supplyB, "linear", "linear", printResults =
 Q, p, X, w, B = market1.solve(0.001, supplyB, "quasi-linear", "quasi-linear", printResults = True) # For this one definitely contraction
 
 
-
+#%%
 ############ Example 4 ############
 
 # Matrix of valuations of buyers/workers: |buyers| x |goods|
-demandV = np.array([[10, 0], [0, 10]])
+demandV = np.array([[10, 2], [2, 10]])
 
 # Matrix of valuations of firms: |firms| x |workers|
-supplyV = np.array([[0, 10], [10, 0]])
+supplyV = np.array([[5, 10], [10, 5]])
 
 # Budgets of firms: |buyers|
 supplyB = np.array([0.7, 0.3])
@@ -98,7 +99,10 @@ market1 = e.Economy(supplyV, supplyB, demandV)
 #### Check if the iterative process converges
 
 # Linear Utilities
-Q, p, X, w, B = market1.solve(0.001, supplyB, "linear", "linear", printResults = True) # For this one definitely contraction
+Q, p, X, w, B = market1.solve(0.001, supplyB, "leontief", "leontief", printResults = True) # For this one definitely contraction
 
-# Quasilinear Utilities
-Q, p, X, w, B = market1.solve(0.001, supplyB, "quasi-linear", "quasi-linear", printResults = True) # For this one definitely contraction
+# # Quasilinear Utilities
+# Q, p, X, w, B = market1.solve(0.001, supplyB, "quasi-linear", "quasi-linear", printResults = True) # For this one definitely contraction
+
+
+# %%
